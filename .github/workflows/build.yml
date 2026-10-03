@@ -44,6 +44,33 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Patch file_picker compileSdk
+        run: |
+          python3 - <<'PY'
+          import glob
+          import re
+
+          files = glob.glob(
+              '/home/runner/.pub-cache/hosted/pub.dev/file_picker-*/android/build.gradle*'
+          )
+
+          print('file_picker Gradle files:', files)
+
+          for path in files:
+              text = open(path, encoding='utf-8').read()
+
+              new = re.sub(
+                  r'compileSdk(?:Version)?\s*(?:=\s*)?34\b',
+                  'compileSdk = 36',
+                  text
+              )
+
+              if new != text:
+                  open(path, 'w', encoding='utf-8').write(new)
+                  print('Patched:', path)
+              else:
+                  print('No compileSdk 34 found in:', path)
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 

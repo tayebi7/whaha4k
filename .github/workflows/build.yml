@@ -34,9 +34,9 @@ jobs:
 
       - name: Set Android compileSdk 36
         run: |
-          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle.kts
           echo "Checking compileSdk:"
-          grep -n "compileSdk" android/app/build.gradle
+          grep -n "compileSdk" android/app/build.gradle.kts
 
       - name: Remove generated sample test
         run: rm -rf test

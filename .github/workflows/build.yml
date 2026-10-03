@@ -1,56 +1,64 @@
 name: Build APK
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+push:
+branches: [main]
+workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+build:
+runs-on: ubuntu-latest
 
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
+steps:
+  - uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
+  - uses: actions/setup-java@v5
+    with:
+      distribution: temurin
+      java-version: '17'
 
-      - name: Create Android platform
-        run: flutter create --platforms=android --project-name waha4k --org com.waha4k .
+  - uses: subosito/flutter-action@v2
+    with:
+      channel: stable
+      cache: true
 
-      - name: Patch manifest
-        run: bash tool/patch_android.sh
+  - name: Create Android platform
+    run: flutter create --platforms=android --project-name waha4k --org com.waha4k .
 
-      - name: Remove generated sample test
-        run: rm -rf test
+  - name: Patch manifest
+    run: bash tool/patch_android.sh
 
-      - run: flutter pub get
+  - name: Set Android compileSdk 36
+    run: |
+      sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' android/app/build.gradle
+      grep -n "compileSdk" android/app/build.gradle
 
-      - name: Analyze (prints Dart errors)
-        run: |
-          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1 || true
-          grep -E "error •" analyze.txt | head -20 | while read -r l; do echo "::error::$l"; done
-          tail -5 analyze.txt
+  - name: Remove generated sample test
+    run: rm -rf test
 
-      - name: Generate launcher icons
-        run: dart run flutter_launcher_icons
+  - name: Get dependencies
+    run: flutter pub get
 
-      - name: Build release APK
-        run: |
-          flutter build apk --release --split-per-abi > build.txt 2>&1 || {
-            grep -iE "error|wrong|failed|exception|not found" build.txt | head -15 | while read -r l; do echo "::error::$l"; done
-            tail -30 build.txt
-            exit 1
-          }
-          tail -5 build.txt
+  - name: Analyze
+    run: |
+      flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.txt 2>&1 || true
+      grep -E "error •" analyze.txt | head -20 | while read -r l; do echo "::error::$l"; done
+      tail -5 analyze.txt
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: waha4k-apk
-          path: build/app/outputs/flutter-apk/*.apk
+  - name: Generate launcher icons
+    run: dart run flutter_launcher_icons
+
+  - name: Build release APK
+    run: |
+      flutter build apk --release --split-per-abi > build.txt 2>&1 || {
+        grep -iE "error|wrong|failed|exception|not found" build.txt | head -15 | while read -r l; do echo "::error::$l"; done
+        tail -30 build.txt
+        exit 1
+      }
+      tail -5 build.txt
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: waha4k-apk
+      path: build/app/outputs/flutter-apk/*.apk

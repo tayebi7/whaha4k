@@ -114,7 +114,6 @@ class _PlayerPageState extends State<PlayerPage> {
             Positioned.fill(
               child: Video(controller: _vc, controls: NoVideoControls, fit: _fit),
             ),
-            // مؤشر التحميل
             Center(
               child: StreamBuilder<bool>(
                 stream: _p.stream.buffering,
@@ -123,7 +122,6 @@ class _PlayerPageState extends State<PlayerPage> {
                     : const SizedBox.shrink(),
               ),
             ),
-            // رسالة الخطأ
             Positioned(
               bottom: 70,
               left: 16,
@@ -139,7 +137,6 @@ class _PlayerPageState extends State<PlayerPage> {
               ),
             ),
             if (_show) ...[
-              // الشريط العلوي
               Positioned(
                 top: 0,
                 left: 0,
@@ -172,7 +169,6 @@ class _PlayerPageState extends State<PlayerPage> {
                   ),
                 ),
               ),
-              // أزرار الوسط
               Center(
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   IconButton(
@@ -198,7 +194,6 @@ class _PlayerPageState extends State<PlayerPage> {
                       icon: const Icon(Icons.skip_next)),
                 ]),
               ),
-              // شريط التقديم (للأفلام والمسلسلات فقط)
               if (!_isLive)
                 Positioned(
                   left: 12,
@@ -211,16 +206,17 @@ class _PlayerPageState extends State<PlayerPage> {
                       builder: (_, s) {
                         final pos = s.data ?? Duration.zero;
                         final dur = _p.state.duration;
-                        final max = dur.inMilliseconds.toDouble();
+                        final double total = dur.inMilliseconds.toDouble();
+                        final double cur = total <= 0
+                            ? 0.0
+                            : pos.inMilliseconds.toDouble().clamp(0.0, total).toDouble();
                         return Row(children: [
                           const SizedBox(width: 8),
                           Text(_fmt(pos), style: const TextStyle(fontSize: 12)),
                           Expanded(
                             child: Slider(
-                              value: max <= 0
-                                  ? 0
-                                  : pos.inMilliseconds.toDouble().clamp(0, max),
-                              max: max <= 0 ? 1 : max,
+                              value: cur,
+                              max: total <= 0 ? 1.0 : total,
                               onChanged: (v) => _p.seek(Duration(milliseconds: v.toInt())),
                               onChangeEnd: (_) => _arm(),
                             ),
